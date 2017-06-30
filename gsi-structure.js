@@ -61,6 +61,7 @@ module.exports = {
         },
         abilities: [],
         items: [],
+		buildings: []
     },
     item_base: {
         name: null,
@@ -70,7 +71,7 @@ module.exports = {
         passive: null,
         charges: null
     },
-    abilit_base: {
+    ability_base: {
         name: null,
         level: null,
         can_cast: null,

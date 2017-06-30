@@ -84,14 +84,26 @@ function New_data(req, res) {
 function Check_auth(tokens) {
     return function(req, res, next) {
         if (tokens) {
-            if (req.body.auth && // Body has auth
-                (req.body.auth == tokens || // tokens was a single string or
-                (tokens.constructor === Array && // tokens was an array and
-                tokens.indexOf(req.body.auth) != -1))) { // containing the token
-                next();
+            if (req.body.auth) {
+				if(tokens.constructor === String) {
+					if(check_auth_single(req.body.auth, tokens)) {
+						next();
+					} else {
+						console.log("Dropping message from IP: " + req.ip + ", invalid auth token");
+						res.end();
+					}
+				}
+				else if(tokens.constructor === Array) {
+					if(check_auth_multi(req.body.auth, tokens)) {
+						next();
+					} else {
+						console.log("Dropping message from IP: " + req.ip + ", invalid auth token from token list");
+						res.end();
+					}
+				}
             } else {
                 // Not a valid auth, drop the message
-                console.log("Dropping message from IP: " + req.ip + ", no valid auth token");
+                console.log("Dropping message from IP: " + req.ip + ", no auth tokens provided");
                 res.end();
             }
         } else {
@@ -100,10 +112,33 @@ function Check_auth(tokens) {
     }
 }
 
+function check_auth_single(auth, tokens) {
+	let keys = Object.keys(auth)
+	for(var i = 0; i < keys.length; i++) {
+		if(auth[keys[i]] == tokens){
+			return true
+		}
+	}
+	return false
+}
+
+function check_auth_multi(auth, tokens) {
+	let keys = Object.keys(auth)
+	for(var i = 0; i < keys.length; i++) {
+		for(var j = 0; j < tokens.length; j++) {
+			if(tokens[j] == auth[keys[i]]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+	
 var d2gsi = function(options) {
     options = options || {};
     var port = options.port || 3000;
     var tokens = options.tokens || null;
+	var ip = options.ip || "0.0.0.0";
 
     var app = express();
     app.use(bodyParser.json());
@@ -117,7 +152,7 @@ var d2gsi = function(options) {
         Process_changes('added'),
         New_data);
 
-    var server = app.listen(port, function() {
+    var server = app.listen(port, ip, function() {
         console.log('Dota 2 GSI listening on port ' + server.address().port);
     });
 
