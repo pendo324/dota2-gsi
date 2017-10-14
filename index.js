@@ -160,4 +160,4 @@ var d2gsi = function(options) {
     return this;
 }
 
-module.exports = d2gsi;
+module.exports['default'] = d2gsi;
